@@ -9,6 +9,11 @@ from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from htmlTemplates import css, bot_template, user_template
 from langchain.llms import HuggingFaceHub
+import pinecone
+
+from langchain.vectorstores import Pinecone
+from langchain.docstore.document import Document
+
 
 def get_pdf_text(pdf_docs):
     text = ""
@@ -27,13 +32,26 @@ def get_text_chunks(text):
         length_function=len
     )
     chunks = text_splitter.split_text(text)
-    return chunks
+
+    docs = [Document(page_content=text) for text in chunks]
+    return docs
 
 
 def get_vectorstore(text_chunks):
     embeddings = OpenAIEmbeddings()
     # embeddings = HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-xl")
-    vectorstore = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
+    # query_result = embeddings.embed_documents(text_chunks)
+    # print(query_result)
+    # vectorstore = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
+    # vectorstore.save_local("faiss_index")
+
+    pinecone.init(api_key="")
+
+    pc = pinecone.Client()
+    index = pc.Index("financialbot")
+
+
+    vectorstore = Pinecone.from_documents(text_chunks, embedding=embeddings, index=index)
     return vectorstore
 
 
@@ -65,6 +83,13 @@ def handle_userinput(user_question):
 
 
 def main():
+    # pc = Pinecone(api_key="147350ef-5846-457f-85e7-55f6bf459f85")
+    # index = pc.Index("financialbot")
+
+    # print(index.describe_index_stats())
+
+    # index.upsert(vectors=to_upsert)
+    
     load_dotenv()
     st.set_page_config(page_title="Chat with multiple PDFs",
                        page_icon=":books:")
@@ -93,7 +118,19 @@ def main():
                 text_chunks = get_text_chunks(raw_text)
 
                 # create vector store
+                # vectorstore = get_vectorstore(text_chunks)
                 vectorstore = get_vectorstore(text_chunks)
+
+                # pc = Pinecone(api_key="147350ef-5846-457f-85e7-55f6bf459f85")
+                # index = pc.Index("financialbot")
+
+                # print(index.describe_index_stats())
+
+                # vectors_with_ids = [(f"id_{i}", vector) for i, vector in enumerate(query_result)]
+
+                # index.upsert(vectors=vectors_with_ids)
+
+                
 
                 # create conversation chain
                 st.session_state.conversation = get_conversation_chain(
