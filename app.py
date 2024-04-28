@@ -1,10 +1,13 @@
 from http import client
 import pinecone
+import os
 import streamlit as st
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_pinecone import PineconeVectorStore
+from langchain_openai import OpenAIEmbeddings
+from langchain.llms import OpenAI
 from langchain.vectorstores import FAISS
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
@@ -15,17 +18,10 @@ from pinecone import Pinecone, ServerlessSpec
 from langchain.docstore.document import Document
 
 
-
-pc = Pinecone(api_key="81728cbe-a663-4abe-95bc-eec7365b79f1")
-pc.create_index(
-    name="financialbot",
-    dimension=8, # Replace with your model dimensions
-    metric="euclidean", # Replace with your model metric
-    spec=ServerlessSpec(
-        cloud="aws",
-        region="us-east-1"
-    ) 
-)
+load_dotenv()
+# Initialize Pinecone client
+os.environ['PINECONE_API_KEY'] = os.getenv('PINECONE_API_KEY')
+os.environ['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
 
 
 def get_pdf_text(pdf_docs):
@@ -50,21 +46,17 @@ def get_text_chunks(text):
     return docs
 
 
-def get_vectorstore(text_chunks):
+def get_vectorstore(docs):
     embeddings = OpenAIEmbeddings()
-    # embeddings = HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-xl")
-    # query_result = embeddings.embed_documents(text_chunks)
-    # print(query_result)
-    # vectorstore = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
-    # vectorstore.save_local("faiss_index")
 
-
-    pc = pinecone.Client()
-    index = pc.Index("financialbot")
-
-
-    vectorstore = Pinecone.from_documents(text_chunks, embedding=embeddings, index=index)
-    return vectorstore
+    
+    vectorstore_from_docs = PineconeVectorStore.from_documents(
+        docs,
+        index_name="fibot",
+        embedding=embeddings
+    )
+    
+    return vectorstore_from_docs
 
 
 def get_conversation_chain(vectorstore):
