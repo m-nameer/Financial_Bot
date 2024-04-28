@@ -1,18 +1,31 @@
+from http import client
+import pinecone
 import streamlit as st
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.embeddings import OpenAIEmbeddings, HuggingFaceInstructEmbeddings
+from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from htmlTemplates import css, bot_template, user_template
-from langchain.llms import HuggingFaceHub
-import pinecone
+from pinecone import Pinecone, ServerlessSpec
 
-from langchain.vectorstores import Pinecone
 from langchain.docstore.document import Document
+
+
+
+pc = Pinecone(api_key="81728cbe-a663-4abe-95bc-eec7365b79f1")
+pc.create_index(
+    name="financialbot",
+    dimension=8, # Replace with your model dimensions
+    metric="euclidean", # Replace with your model metric
+    spec=ServerlessSpec(
+        cloud="aws",
+        region="us-east-1"
+    ) 
+)
 
 
 def get_pdf_text(pdf_docs):
@@ -45,7 +58,6 @@ def get_vectorstore(text_chunks):
     # vectorstore = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
     # vectorstore.save_local("faiss_index")
 
-    pinecone.init(api_key="")
 
     pc = pinecone.Client()
     index = pc.Index("financialbot")
