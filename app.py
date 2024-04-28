@@ -47,16 +47,18 @@ def get_text_chunks(text):
 
 
 def get_vectorstore(docs):
-    # embeddings = OpenAIEmbeddings()
+    embeddings = OpenAIEmbeddings()
 
     
-    # vectorstore_from_docs = PineconeVectorStore.from_documents(
-    #     docs,
-    #     index_name="finbot",
-    #     embedding=embeddings
-    # )
+    vectorstore_from_docs = PineconeVectorStore.from_documents(
+        docs,
+        index_name="finbot",
+        embedding=embeddings
+    )
 
-    vectorstore_from_docs = []
+    # vectorstore_from_docs = PineconeVectorStore.add_documents(documents=docs, embedding=embeddings)
+
+    # vectorstore_from_docs = []
     
     return vectorstore_from_docs
 
@@ -73,7 +75,7 @@ def get_conversation_chain():
     memory = ConversationBufferMemory(
         memory_key='chat_history', return_messages=True)
     
-    docsearch = PineconeVectorStore.from_existing_index(index_name="fibot", embedding=embeddings)
+    docsearch = PineconeVectorStore.from_existing_index(index_name="finbot", embedding=embeddings)
     
     conversation_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,
@@ -123,36 +125,37 @@ def main():
     if user_question:
         handle_userinput(user_question)
 
-    # with st.sidebar:
-    #     st.subheader("Your documents")
-    #     pdf_docs = st.file_uploader(
-    #         "Upload your PDFs here and click on 'Process'", accept_multiple_files=True)
-    #     if st.button("Process"):
-    #         with st.spinner("Processing"):
-    #             # get pdf text
-    #             raw_text = get_pdf_text(pdf_docs)
+    with st.sidebar:
+        st.subheader("Your documents")
+        pdf_docs = st.file_uploader(
+            "Upload your PDFs here and click on 'Process'", accept_multiple_files=True)
+        if st.button("Process"):
+            with st.spinner("Processing"):
+                # get pdf text
+                raw_text = get_pdf_text(pdf_docs)
 
-    #             # get the text chunks
-    #             text_chunks = get_text_chunks(raw_text)
+                # get the text chunks
+                text_chunks = get_text_chunks(raw_text)
 
-    #             # create vector store
-    #             # vectorstore = get_vectorstore(text_chunks)
-    #             vectorstore = get_vectorstore(text_chunks)
+                # create vector store
+                # vectorstore = get_vectorstore(text_chunks)
+                # vectorstore = get_vectorstore(text_chunks)
+                get_vectorstore(text_chunks)
 
-    #             # pc = Pinecone(api_key="147350ef-5846-457f-85e7-55f6bf459f85")
-    #             # index = pc.Index("financialbot")
+                # pc = Pinecone(api_key="147350ef-5846-457f-85e7-55f6bf459f85")
+                # index = pc.Index("financialbot")
 
-    #             # print(index.describe_index_stats())
+                # print(index.describe_index_stats())
 
-    #             # vectors_with_ids = [(f"id_{i}", vector) for i, vector in enumerate(query_result)]
+                # vectors_with_ids = [(f"id_{i}", vector) for i, vector in enumerate(query_result)]
 
-    #             # index.upsert(vectors=vectors_with_ids)
+                # index.upsert(vectors=vectors_with_ids)
 
                 
 
-    #             # create conversation chain
-    #             st.session_state.conversation = get_conversation_chain(
-    #                 vectorstore, text_chunks)
+                # create conversation chain
+                # st.session_state.conversation = get_conversation_chain(
+                #     vectorstore, text_chunks)
 
 
 if __name__ == '__main__':
