@@ -14,10 +14,19 @@ from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from htmlTemplates import css, bot_template, user_template
 from pinecone import Pinecone, ServerlessSpec
-
+from typing import List
+from langchain import PromptTemplate
+from langchain.prompts.chat import SystemMessagePromptTemplate, HumanMessagePromptTemplate
+from langchain_core.messages import HumanMessage
 from langchain.docstore.document import Document
-from psx import stocks, tickers
-import datetime 
+# from psx import tickers
+# import datetime 
+
+from langchain_core.messages import BaseMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains import create_history_aware_retriever
+from langchain.chains.retrieval import create_retrieval_chain
 
 
 load_dotenv()
@@ -58,62 +67,120 @@ def get_vectorstore(docs):
         embedding=embeddings
     )
 
-    # vectorstore_from_docs = PineconeVectorStore.add_documents(documents=docs, embedding=embeddings)
-
-    # vectorstore_from_docs = []
     
     return vectorstore_from_docs
 
 
+
 def get_conversation_chain():
-    embeddings = OpenAIEmbeddings()
-
     
-
-
+    # embeddings = OpenAIEmbeddings()
+    # vectorstore = PineconeVectorStore.from_existing_index(index_name="fibot", embedding=embeddings)
     # llm = ChatOpenAI()
-    # # llm = HuggingFaceHub(repo_id="google/flan-t5-xxl", model_kwargs={"temperature":0.5, "max_length":512})
-    # # print("Type of retriever:", type(vectorstore.as_retriever()))
-    # memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
-    # print("memory is: ", memory)
-    vectorstore = PineconeVectorStore.from_existing_index(index_name="fibot", embedding=embeddings)
+    
+    # memory = ConversationBufferMemory(
+    #     memory_key='chat_history', return_messages=True)
     
     # conversation_chain = ConversationalRetrievalChain.from_llm(
     #     llm=llm,
-    #     retriever=docsearch.as_retriever(),
+    #     retriever=vectorstore.as_retriever(),
     #     memory=memory
     # )
-   
+    
+    # sys_prompt = "You are an AI financial adviser named Finley. You will attempt to answer any question asked and will probe for the human's risk appetite by asking questions of its own. If the human's risk appetite is low you will offer conservative financial advice, if the risk appetite of the human is higher you will offer more aggressive advice"
+    # conversation_chain.combine_docs_chain.llm_chain.prompt.messages[0] = SystemMessagePromptTemplate.from_template( sys_prompt)
+    
     # return conversation_chain
-    llm = ChatOpenAI()
-    # llm = HuggingFaceHub(repo_id="google/flan-t5-xxl", model_kwargs={"temperature":0.5, "max_length":512})
+    
+    
+    
+    # Initialize your retriever here
+    embeddings = OpenAIEmbeddings()
+    vectorstore = PineconeVectorStore.from_existing_index(index_name="fibot", embedding=embeddings)
+    
+    retriever = vectorstore.as_retriever()
 
-    memory = ConversationBufferMemory(
-        memory_key='chat_history', return_messages=True)
-    conversation_chain = ConversationalRetrievalChain.from_llm(
-        llm=llm,
-        retriever=vectorstore.as_retriever(),
-        memory=memory
+    # Initialize ChatAnthropic
+    llm = ChatOpenAI()
+
+    # Contextualize question
+    contextualizeQSystemPrompt = """
+    Given a chat history and the latest user question
+    which might reference context in the chat history,
+    formulate a standalone question which can be understood
+    without the chat history. Do NOT answer the question, just
+    reformulate it if needed and otherwise return it as is.
+    """
+    contextualizeQPrompt = ChatPromptTemplate.from_messages([
+        ("system", contextualizeQSystemPrompt),
+        MessagesPlaceholder("chat_history"),
+        ("human", "{input}"),
+    ])
+    
+    historyAwareRetriever = create_history_aware_retriever(
+        llm,
+        retriever,
+        contextualizeQPrompt
     )
-    return conversation_chain
+
+    # Answer question
+    qaSystemPrompt = """
+    You are a Financial assistant named Finley for question-answering tasks. Try to
+    understand the user's risk appetite and his/her financial goals and answer accordingly. 
+    Use the following pieces of retrieved context to answer the
+    question. If you don't know the answer, just say that you
+    don't know. 
+    \n\n
+    {context}
+    """
+    
+    qaPrompt = ChatPromptTemplate.from_messages([
+        ("system", qaSystemPrompt),
+        MessagesPlaceholder("chat_history"),
+        ("human", "{input}"),
+    ])
+
+    questionAnswerChain = create_stuff_documents_chain(
+        llm=llm,
+        prompt=qaPrompt
+    )
+
+    ragChain = create_retrieval_chain(
+        retriever=historyAwareRetriever,
+        combine_docs_chain=questionAnswerChain
+    )
+
+    return ragChain
+
+
+
+
 
 def submit():
     st.session_state.something = st.session_state.widget
     st.session_state.widget = ''
 
+
 def handle_userinput(user_question):
-    # st.session_state.conversation = get_conversation_chain()
-    # print("user_question", user_question)
-    # print("conversation", st.session_state.conversation)
-    print("chat: ",st.session_state.chat_history)
-    response = st.session_state.conversation({'question': user_question})
-    print("resp: ",response)
-    # print("response is: ", response)
-    st.session_state.chat_history = response['chat_history']
+   
+    # response = st.session_state.conversation({'question': user_question})
+    
+    chat_history = st.session_state.get("chat_history", [])
+    print(chat_history)
+    response = st.session_state.conversation.invoke(
+        {'input': user_question,
+         'chat_history': chat_history}
+    )
+    print("YOOHOO")
+    print(response)
+    
+    new_messages = [HumanMessage(content=user_question), response["answer"]]
+    chat_history.extend(new_messages)
+    
+    st.session_state.chat_history = chat_history
+    
+    
 
-    print("Conversation: ",st.session_state.conversation)
-
-    print("chat history is: ", st.session_state.chat_history)
 
     for i, message in enumerate(st.session_state.chat_history):
         if i % 2 == 0:
@@ -121,14 +188,14 @@ def handle_userinput(user_question):
                 "{{MSG}}", message.content), unsafe_allow_html=True)
         else:
             st.write(bot_template.replace(
-                "{{MSG}}", message.content), unsafe_allow_html=True)
+                "{{MSG}}", message), unsafe_allow_html=True)
             
 
-def get_data():
-    ticker_list = tickers()
-    # data = stocks("SILK", start=datetime.date(2020, 1, 1), end=datetime.date.today())
-    print(ticker_list)
-    # print(data)
+# def get_data():
+#     ticker_list = tickers()
+#     # data = stocks("SILK", start=datetime.date(2020, 1, 1), end=datetime.date.today())
+#     print(ticker_list)
+#     # print(data)
 
 
 def main():
@@ -151,15 +218,18 @@ def main():
     st.write(css, unsafe_allow_html=True)
 
     if "conversation" not in st.session_state:
-        print("I am here againnnnnnnnnnnnnnnnnnnnnnnnnnnn")
+        
         st.session_state.conversation = get_conversation_chain()
+        
+    chathistory: List[BaseMessage] = []
+        
     if "chat_history" not in st.session_state:
-        st.session_state.chat_history = None
+        print("Insideeeeeeee")
+        st.session_state.chat_history = chathistory
 
-    
 
-    st.header("Chat with multiple PDFs :books:")
-    user_question = st.text_input("Ask a question about your documents:")
+    st.header("Chat with Finley :dollar:")
+    user_question = st.text_input("Ask a questions on financials:")
     if user_question:
         handle_userinput(user_question)
 
@@ -167,7 +237,7 @@ def main():
     with st.sidebar:
         st.subheader("Your documents")
         pdf_docs = st.file_uploader(
-            "Upload your PDFs here and click on 'Process'", accept_multiple_files=True)
+            "Upload your neccessary documents here and click on 'Process'", accept_multiple_files=True)
         if st.button("Process"):
             with st.spinner("Processing"):
                 # get pdf text
