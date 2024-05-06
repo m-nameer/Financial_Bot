@@ -1,18 +1,29 @@
+from http import client
+import pinecone
+import os
 import streamlit as st
 from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.embeddings import OpenAIEmbeddings, HuggingFaceInstructEmbeddings
+from langchain_pinecone import PineconeVectorStore
+from langchain_openai import OpenAIEmbeddings
+from langchain.llms import OpenAI
 from langchain.vectorstores import FAISS
 from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from htmlTemplates import css, bot_template, user_template
-from langchain.llms import HuggingFaceHub
-import pinecone
+from pinecone import Pinecone, ServerlessSpec
 
-from langchain.vectorstores import Pinecone
 from langchain.docstore.document import Document
+from psx import stocks, tickers
+import datetime 
+
+
+load_dotenv()
+# Initialize Pinecone client
+os.environ['PINECONE_API_KEY'] = os.getenv('PINECONE_API_KEY')
+os.environ['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
 
 
 def get_pdf_text(pdf_docs):
@@ -37,25 +48,43 @@ def get_text_chunks(text):
     return docs
 
 
-def get_vectorstore(text_chunks):
+def get_vectorstore(docs):
     embeddings = OpenAIEmbeddings()
-    # embeddings = HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-xl")
-    # query_result = embeddings.embed_documents(text_chunks)
-    # print(query_result)
-    # vectorstore = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
-    # vectorstore.save_local("faiss_index")
 
-    pinecone.init(api_key="")
+    
+    vectorstore_from_docs = PineconeVectorStore.from_documents(
+        docs,
+        index_name="fibot",
+        embedding=embeddings
+    )
 
-    pc = pinecone.Client()
-    index = pc.Index("financialbot")
+    # vectorstore_from_docs = PineconeVectorStore.add_documents(documents=docs, embedding=embeddings)
+
+    # vectorstore_from_docs = []
+    
+    return vectorstore_from_docs
 
 
-    vectorstore = Pinecone.from_documents(text_chunks, embedding=embeddings, index=index)
-    return vectorstore
+def get_conversation_chain():
+    embeddings = OpenAIEmbeddings()
+
+    
 
 
-def get_conversation_chain(vectorstore):
+    # llm = ChatOpenAI()
+    # # llm = HuggingFaceHub(repo_id="google/flan-t5-xxl", model_kwargs={"temperature":0.5, "max_length":512})
+    # # print("Type of retriever:", type(vectorstore.as_retriever()))
+    # memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
+    # print("memory is: ", memory)
+    vectorstore = PineconeVectorStore.from_existing_index(index_name="fibot", embedding=embeddings)
+    
+    # conversation_chain = ConversationalRetrievalChain.from_llm(
+    #     llm=llm,
+    #     retriever=docsearch.as_retriever(),
+    #     memory=memory
+    # )
+   
+    # return conversation_chain
     llm = ChatOpenAI()
     # llm = HuggingFaceHub(repo_id="google/flan-t5-xxl", model_kwargs={"temperature":0.5, "max_length":512})
 
@@ -68,10 +97,23 @@ def get_conversation_chain(vectorstore):
     )
     return conversation_chain
 
+def submit():
+    st.session_state.something = st.session_state.widget
+    st.session_state.widget = ''
 
 def handle_userinput(user_question):
+    # st.session_state.conversation = get_conversation_chain()
+    # print("user_question", user_question)
+    # print("conversation", st.session_state.conversation)
+    print("chat: ",st.session_state.chat_history)
     response = st.session_state.conversation({'question': user_question})
+    print("resp: ",response)
+    # print("response is: ", response)
     st.session_state.chat_history = response['chat_history']
+
+    print("Conversation: ",st.session_state.conversation)
+
+    print("chat history is: ", st.session_state.chat_history)
 
     for i, message in enumerate(st.session_state.chat_history):
         if i % 2 == 0:
@@ -80,9 +122,22 @@ def handle_userinput(user_question):
         else:
             st.write(bot_template.replace(
                 "{{MSG}}", message.content), unsafe_allow_html=True)
+            
+
+def get_data():
+    ticker_list = tickers()
+    # data = stocks("SILK", start=datetime.date(2020, 1, 1), end=datetime.date.today())
+    print(ticker_list)
+    # print(data)
 
 
 def main():
+    # get_data()
+   
+    # print("I am here againnnnnnnnnnnnnnnnnnnnnnnnnnnn")
+    # st.session_state.conversation = get_conversation_chain()
+    
+    
     # pc = Pinecone(api_key="147350ef-5846-457f-85e7-55f6bf459f85")
     # index = pc.Index("financialbot")
 
@@ -96,14 +151,18 @@ def main():
     st.write(css, unsafe_allow_html=True)
 
     if "conversation" not in st.session_state:
-        st.session_state.conversation = None
+        print("I am here againnnnnnnnnnnnnnnnnnnnnnnnnnnn")
+        st.session_state.conversation = get_conversation_chain()
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = None
+
+    
 
     st.header("Chat with multiple PDFs :books:")
     user_question = st.text_input("Ask a question about your documents:")
     if user_question:
         handle_userinput(user_question)
+
 
     with st.sidebar:
         st.subheader("Your documents")
@@ -120,6 +179,7 @@ def main():
                 # create vector store
                 # vectorstore = get_vectorstore(text_chunks)
                 vectorstore = get_vectorstore(text_chunks)
+                # get_vectorstore(text_chunks)
 
                 # pc = Pinecone(api_key="147350ef-5846-457f-85e7-55f6bf459f85")
                 # index = pc.Index("financialbot")
@@ -133,8 +193,8 @@ def main():
                 
 
                 # create conversation chain
-                st.session_state.conversation = get_conversation_chain(
-                    vectorstore)
+                # st.session_state.conversation = get_conversation_chain(
+                #     vectorstore)
 
 
 if __name__ == '__main__':
