@@ -1,4 +1,4 @@
-# Stock Analysis Chatbot (Finley)
+# Stock Analysis Chatbot (Finley & Lex)
 
 ## Description
 
