@@ -105,11 +105,15 @@ def handle_userinput(user_question):
     # st.session_state.conversation = get_conversation_chain()
     # print("user_question", user_question)
     # print("conversation", st.session_state.conversation)
+    print("chat: ",st.session_state.chat_history)
     response = st.session_state.conversation({'question': user_question})
+    print("resp: ",response)
     # print("response is: ", response)
     st.session_state.chat_history = response['chat_history']
 
-    # print("chat history is: ", st.session_state.chat_history)
+    print("Conversation: ",st.session_state.conversation)
+
+    print("chat history is: ", st.session_state.chat_history)
 
     for i, message in enumerate(st.session_state.chat_history):
         if i % 2 == 0:
