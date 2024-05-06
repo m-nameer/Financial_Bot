@@ -166,8 +166,6 @@ def submit():
 
 
 def handle_userinput(user_question):
-   
-    # response = st.session_state.conversation({'question': user_question})
     
     chat_history = st.session_state.get("chat_history", [])
     print(chat_history)
@@ -182,8 +180,6 @@ def handle_userinput(user_question):
     chat_history.extend(new_messages)
     
     st.session_state.chat_history = chat_history
-    
-    
 
     for i, message in enumerate(st.session_state.chat_history):
         if i % 2 == 0:
@@ -192,8 +188,6 @@ def handle_userinput(user_question):
         else:
             st.write(bot_template.replace(
                 "{{MSG}}", message), unsafe_allow_html=True)
-            
-
 
 
 
@@ -214,27 +208,30 @@ def main():
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = chathistory
 
+    
 
     st.header("Chat with Finley :dollar:")
+
+
+
+
     user_question = st.text_input("Ask a questions on financials:")
+
+
+
+    
+
     if user_question:
         handle_userinput(user_question)
-
-
+        
     with st.sidebar:
         st.subheader("Your documents")
         pdf_docs = st.file_uploader(
             "Upload your neccessary documents here and click on 'Process'", accept_multiple_files=True)
         if st.button("Process"):
             with st.spinner("Processing"):
-                # get pdf text
                 raw_text = get_pdf_text(pdf_docs)
-
-                # get the text chunks
                 text_chunks = get_text_chunks(raw_text)
-
-                # create vector store
-                # vectorstore = get_vectorstore(text_chunks)
                 vectorstore = get_vectorstore(text_chunks)
                 # get_vectorstore(text_chunks)
 
