@@ -23,6 +23,11 @@ css = '''
   padding: 0 1.5rem;
   color: #fff;
 }
+.chat-container {
+    height: 400px; /* Set the height of the chat container */
+    overflow-y: scroll; /* Enable vertical scrolling */
+}
+
 '''
 
 bot_template = '''

@@ -21,7 +21,7 @@ from langchain_core.messages import HumanMessage
 from langchain.docstore.document import Document
 # from psx import tickers
 # import datetime 
-from langchain_anthropic import ChatAnthropic
+
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.chains.combine_documents import create_stuff_documents_chain
@@ -125,8 +125,13 @@ def get_conversation_chain():
 
     # Answer question
     qaSystemPrompt = """
-    You are a Financial assistant named Finley for question-answering tasks. Try to
-    understand the user's risk appetite and his/her financial goals and answer accordingly. 
+    You are a Financial assistant named Finley for question-answering tasks. 
+    If the user asks about investment opportunities understand the user's risk appetite
+    and his/her financial goals by answering a series of relevant questions using the context
+    provided and give appropriate answers using the context.
+    If the user wants help in calculating his income tax ask him a series of relevant questions
+    and help him calulate his total income tax (assuming he lives in Pakistan) using the context. Try to get
+    the answers to all relevant questions before calculating his income tax.
     Use the following pieces of retrieved context to answer the
     question. If you don't know the answer, just say that you
     don't know. 
@@ -155,7 +160,6 @@ def get_conversation_chain():
 
 
 
-
 def submit():
     st.session_state.something = st.session_state.widget
     st.session_state.widget = ''
@@ -171,7 +175,7 @@ def handle_userinput(user_question):
         {'input': user_question,
          'chat_history': chat_history}
     )
-    print("YOOHOO")
+    
     print(response)
     
     new_messages = [HumanMessage(content=user_question), response["answer"]]
@@ -180,7 +184,6 @@ def handle_userinput(user_question):
     st.session_state.chat_history = chat_history
     
     
-
 
     for i, message in enumerate(st.session_state.chat_history):
         if i % 2 == 0:
@@ -191,26 +194,11 @@ def handle_userinput(user_question):
                 "{{MSG}}", message), unsafe_allow_html=True)
             
 
-# def get_data():
-#     ticker_list = tickers()
-#     # data = stocks("SILK", start=datetime.date(2020, 1, 1), end=datetime.date.today())
-#     print(ticker_list)
-#     # print(data)
+
 
 
 def main():
-    # get_data()
-   
-    # print("I am here againnnnnnnnnnnnnnnnnnnnnnnnnnnn")
-    # st.session_state.conversation = get_conversation_chain()
     
-    
-    # pc = Pinecone(api_key="147350ef-5846-457f-85e7-55f6bf459f85")
-    # index = pc.Index("financialbot")
-
-    # print(index.describe_index_stats())
-
-    # index.upsert(vectors=to_upsert)
     
     load_dotenv()
     st.set_page_config(page_title="Chat with multiple PDFs",
@@ -224,7 +212,6 @@ def main():
     chathistory: List[BaseMessage] = []
         
     if "chat_history" not in st.session_state:
-        print("Insideeeeeeee")
         st.session_state.chat_history = chathistory
 
 
@@ -250,21 +237,6 @@ def main():
                 # vectorstore = get_vectorstore(text_chunks)
                 vectorstore = get_vectorstore(text_chunks)
                 # get_vectorstore(text_chunks)
-
-                # pc = Pinecone(api_key="147350ef-5846-457f-85e7-55f6bf459f85")
-                # index = pc.Index("financialbot")
-
-                # print(index.describe_index_stats())
-
-                # vectors_with_ids = [(f"id_{i}", vector) for i, vector in enumerate(query_result)]
-
-                # index.upsert(vectors=vectors_with_ids)
-
-                
-
-                # create conversation chain
-                # st.session_state.conversation = get_conversation_chain(
-                #     vectorstore)
 
 
 if __name__ == '__main__':
