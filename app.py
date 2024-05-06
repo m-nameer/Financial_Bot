@@ -162,8 +162,6 @@ def submit():
 
 
 def handle_userinput(user_question):
-   
-    # response = st.session_state.conversation({'question': user_question})
     
     chat_history = st.session_state.get("chat_history", [])
     print(chat_history)
@@ -178,8 +176,6 @@ def handle_userinput(user_question):
     chat_history.extend(new_messages)
     
     st.session_state.chat_history = chat_history
-    
-    
 
 
     for i, message in enumerate(st.session_state.chat_history):
@@ -189,28 +185,10 @@ def handle_userinput(user_question):
         else:
             st.write(bot_template.replace(
                 "{{MSG}}", message), unsafe_allow_html=True)
-            
 
-# def get_data():
-#     ticker_list = tickers()
-#     # data = stocks("SILK", start=datetime.date(2020, 1, 1), end=datetime.date.today())
-#     print(ticker_list)
-#     # print(data)
 
 
 def main():
-    # get_data()
-   
-    # print("I am here againnnnnnnnnnnnnnnnnnnnnnnnnnnn")
-    # st.session_state.conversation = get_conversation_chain()
-    
-    
-    # pc = Pinecone(api_key="147350ef-5846-457f-85e7-55f6bf459f85")
-    # index = pc.Index("financialbot")
-
-    # print(index.describe_index_stats())
-
-    # index.upsert(vectors=to_upsert)
     
     load_dotenv()
     st.set_page_config(page_title="Chat with multiple PDFs",
@@ -227,44 +205,32 @@ def main():
         print("Insideeeeeeee")
         st.session_state.chat_history = chathistory
 
+    
 
     st.header("Chat with Finley :dollar:")
+
+
+
+
     user_question = st.text_input("Ask a questions on financials:")
+
+
+
+    
+
     if user_question:
         handle_userinput(user_question)
-
-
+        
     with st.sidebar:
         st.subheader("Your documents")
         pdf_docs = st.file_uploader(
             "Upload your neccessary documents here and click on 'Process'", accept_multiple_files=True)
         if st.button("Process"):
             with st.spinner("Processing"):
-                # get pdf text
                 raw_text = get_pdf_text(pdf_docs)
-
-                # get the text chunks
                 text_chunks = get_text_chunks(raw_text)
-
-                # create vector store
-                # vectorstore = get_vectorstore(text_chunks)
                 vectorstore = get_vectorstore(text_chunks)
-                # get_vectorstore(text_chunks)
-
-                # pc = Pinecone(api_key="147350ef-5846-457f-85e7-55f6bf459f85")
-                # index = pc.Index("financialbot")
-
-                # print(index.describe_index_stats())
-
-                # vectors_with_ids = [(f"id_{i}", vector) for i, vector in enumerate(query_result)]
-
-                # index.upsert(vectors=vectors_with_ids)
-
-                
-
-                # create conversation chain
-                # st.session_state.conversation = get_conversation_chain(
-                #     vectorstore)
+            
 
 
 if __name__ == '__main__':

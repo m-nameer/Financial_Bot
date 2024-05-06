@@ -23,6 +23,30 @@ css = '''
   padding: 0 1.5rem;
   color: #fff;
 }
+
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.chat-history {
+    flex: 1;
+    overflow-y: scroll;
+}
+
+.chat-input {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background-color: #f9f9f9;
+    padding: 10px;
+}
+
+
+
+
+
 '''
 
 bot_template = '''

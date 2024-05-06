@@ -27,6 +27,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_history_aware_retriever
 from langchain.chains.retrieval import create_retrieval_chain
+from streamlit_chat import message
 
 
 load_dotenv()
@@ -74,27 +75,6 @@ def get_vectorstore(docs):
 
 def get_conversation_chain():
     
-    # embeddings = OpenAIEmbeddings()
-    # vectorstore = PineconeVectorStore.from_existing_index(index_name="fibot", embedding=embeddings)
-    # llm = ChatOpenAI()
-    
-    # memory = ConversationBufferMemory(
-    #     memory_key='chat_history', return_messages=True)
-    
-    # conversation_chain = ConversationalRetrievalChain.from_llm(
-    #     llm=llm,
-    #     retriever=vectorstore.as_retriever(),
-    #     memory=memory
-    # )
-    
-    # sys_prompt = "You are an AI financial adviser named Finley. You will attempt to answer any question asked and will probe for the human's risk appetite by asking questions of its own. If the human's risk appetite is low you will offer conservative financial advice, if the risk appetite of the human is higher you will offer more aggressive advice"
-    # conversation_chain.combine_docs_chain.llm_chain.prompt.messages[0] = SystemMessagePromptTemplate.from_template( sys_prompt)
-    
-    # return conversation_chain
-    
-    
-    
-    # Initialize your retriever here
     embeddings = OpenAIEmbeddings()
     vectorstore = PineconeVectorStore.from_existing_index(index_name="fibot", embedding=embeddings)
     
@@ -182,41 +162,19 @@ def handle_userinput(user_question):
     
 
 
-    for i, message in enumerate(st.session_state.chat_history):
-        if i % 2 == 0:
-            st.write(user_template.replace(
-                "{{MSG}}", message.content), unsafe_allow_html=True)
-        else:
-            st.write(bot_template.replace(
-                "{{MSG}}", message), unsafe_allow_html=True)
+    # for i, message in enumerate(st.session_state.chat_history):
+    #     if i % 2 == 0:
+    #         st.write(user_template.replace(
+    #             "{{MSG}}", message.content), unsafe_allow_html=True)
+    #     else:
+    #         st.write(bot_template.replace(
+    #             "{{MSG}}", message), unsafe_allow_html=True)
             
 
-# def get_data():
-#     ticker_list = tickers()
-#     # data = stocks("SILK", start=datetime.date(2020, 1, 1), end=datetime.date.today())
-#     print(ticker_list)
-#     # print(data)
 
 
 def main():
-    # get_data()
-   
-    # print("I am here againnnnnnnnnnnnnnnnnnnnnnnnnnnn")
-    # st.session_state.conversation = get_conversation_chain()
-    
-    
-    # pc = Pinecone(api_key="147350ef-5846-457f-85e7-55f6bf459f85")
-    # index = pc.Index("financialbot")
-
-    # print(index.describe_index_stats())
-
-    # index.upsert(vectors=to_upsert)
-    
     load_dotenv()
-    st.set_page_config(page_title="Chat with multiple PDFs",
-                       page_icon=":books:")
-    st.write(css, unsafe_allow_html=True)
-
     if "conversation" not in st.session_state:
         
         st.session_state.conversation = get_conversation_chain()
@@ -227,11 +185,61 @@ def main():
         print("Insideeeeeeee")
         st.session_state.chat_history = chathistory
 
+    st.title("Chat with Finley :dollar:")
 
-    st.header("Chat with Finley :dollar:")
-    user_question = st.text_input("Ask a questions on financials:")
-    if user_question:
-        handle_userinput(user_question)
+    chat_placeholder = st.empty()
+
+    # with chat_placeholder.container():    
+    #     for i, my_message in enumerate(st.session_state.chat_history):
+    #         print("my_message: ",my_message)
+    #         if i % 2 == 0:
+    #             # st.write(user_template.replace(
+    #             #     "{{MSG}}", message.content), unsafe_allow_html=True)
+    #             message(my_message.content, is_user=True, key=f"{i}_user")
+    #         else:
+    #             message(
+    #                 my_message, 
+    #                 key=f"{i}",
+    #                 )
+  
+
+    with st.container():
+        user_question = st.text_input("Ask a questions on financials:")
+        if user_question:
+            handle_userinput(user_question)
+
+
+    with chat_placeholder.container():    
+        for i, my_message in enumerate(st.session_state.chat_history):
+            print("my_message: ",my_message)
+            if i % 2 == 0:
+                message(my_message.content, is_user=True, key=f"{i}_user")
+            else:
+                message(
+                    my_message, 
+                    key=f"{i}",
+                    )
+
+    # load_dotenv()
+    # st.set_page_config(page_title="Chat with multiple PDFs",
+    #                    page_icon=":books:")
+    # st.write(css, unsafe_allow_html=True)
+
+    # if "conversation" not in st.session_state:
+        
+    #     st.session_state.conversation = get_conversation_chain()
+        
+    # chathistory: List[BaseMessage] = []
+        
+    # if "chat_history" not in st.session_state:
+    #     print("Insideeeeeeee")
+    #     st.session_state.chat_history = chathistory
+
+
+    # st.header("Chat with Finley :dollar:")
+    # user_question = st.text_input("Ask a questions on financials:")
+    # if user_question:
+    #     handle_userinput(user_question)
 
 
     with st.sidebar:
@@ -246,26 +254,8 @@ def main():
                 # get the text chunks
                 text_chunks = get_text_chunks(raw_text)
 
-                # create vector store
-                # vectorstore = get_vectorstore(text_chunks)
                 vectorstore = get_vectorstore(text_chunks)
-                # get_vectorstore(text_chunks)
-
-                # pc = Pinecone(api_key="147350ef-5846-457f-85e7-55f6bf459f85")
-                # index = pc.Index("financialbot")
-
-                # print(index.describe_index_stats())
-
-                # vectors_with_ids = [(f"id_{i}", vector) for i, vector in enumerate(query_result)]
-
-                # index.upsert(vectors=vectors_with_ids)
-
                 
-
-                # create conversation chain
-                # st.session_state.conversation = get_conversation_chain(
-                #     vectorstore)
-
 
 if __name__ == '__main__':
     main()
