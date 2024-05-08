@@ -9,11 +9,11 @@ def get_chatbot_page(choice):
   if choice == "Financial Advisor (Finley)":
     # Replace this with the actual code for your Financial Advisor chatbot
     # st.write("This is the Financial Advisor chatbot page!")
-    st.switch_page("pages/1_Finbot.py")
+    st.switch_page("pages/1_Finley.py")
   elif choice == "Investment Specialist (Lex)":
     # Replace this with the actual code for your Investment Specialist chatbot
     # st.write("This is the Investment Specialist chatbot page!")
-    st.switch_page("pages/2_NAM.py")
+    st.switch_page("pages/2_Lex.py")
   else:
     st.write(f"Invalid choice: {choice}")
 
