@@ -1,65 +1,48 @@
-# MultiPDF Chat App
+# Stock Analysis Chatbot (Finley & Lex)
+![Screenshot (90)](https://github.com/user-attachments/assets/d862e83e-5e6a-4c92-a8f1-67d7d7085d91)
 
-> You can find the tutorial for this project on [YouTube](https://youtu.be/dXxQ0LR-3Hg).
+## Description
 
-## Introduction
-------------
-The MultiPDF Chat App is a Python application that allows you to chat with multiple PDF documents. You can ask questions about the PDFs using natural language, and the application will provide relevant responses based on the content of the documents. This app utilizes a language model to generate accurate answers to your queries. Please note that the app will only respond to questions related to the loaded PDFs.
+This project implements a stock analysis chatbot that provides various functionalities related to stock analysis and financial advice. It leverages multiple APIs and libraries including OpenAI, yfinance, Streamlit, and Pinecone for natural language processing, stock data retrieval, and conversation management.
 
-## How It Works
-------------
+## Features
 
-![MultiPDF Chat App Diagram](./docs/PDF-LangChain.jpg)
+- **Stock Price Retrieval:** Get the latest stock price given the ticker symbol of a company.
+- **Simple Moving Average (SMA) Calculation:** Calculate the simple moving average for a given stock ticker and window.
+- **Exponential Moving Average (EMA) Calculation:** Calculate the exponential moving average for a given stock ticker and window.
+- **Relative Strength Index (RSI) Calculation:** Calculate the RSI for a given stock ticker.
+- **Moving Average Convergence Divergence (MACD) Calculation:** Calculate the MACD for a given stock ticker.
+- **Stock Price Plotting:** Plot the stock price for the last year given the ticker symbol of a company.
+- **Batch Stock Quotes Retrieval:** Retrieves the latest stock prices for a list of ticker symbols and returns them as a formatted string.
+- **Investment Advice Generation:** Gives investment advice by analyzing dividend rates, return on equity, and PEG ratios of specified stocks.
 
-The application follows these steps to provide responses to your questions:
+## Deployed App
 
-1. PDF Loading: The app reads multiple PDF documents and extracts their text content.
+You can access the deployed app at: [Deployed App Link](https://financialbot-finley.streamlit.app/)
+  
+![Screenshot (89)](https://github.com/user-attachments/assets/4a43291e-ae08-42ab-9c31-8de8e4e7ac1f)
 
-2. Text Chunking: The extracted text is divided into smaller chunks that can be processed effectively.
+## Setup Instructions
 
-3. Language Model: The application utilizes a language model to generate vector representations (embeddings) of the text chunks.
+1. **Clone the repository:**
 
-4. Similarity Matching: When you ask a question, the app compares it with the text chunks and identifies the most semantically similar ones.
+   ```bash
+   git clone <repository_url>
+2. **Install dependencies:**
 
-5. Response Generation: The selected chunks are passed to the language model, which generates a response based on the relevant content of the PDFs.
+    ```bash
+    pip install -r requirements.txt
+    
+3. **Set up environment variables:**
 
-## Dependencies and Installation
-----------------------------
-To install the MultiPDF Chat App, please follow these steps:
+  Create a .env file in the root directory and add your API keys for OpenAI and Pinecone
+  ```bash
+  OPENAI_API_KEY=your_openai_api_key
+  PINECONE_API_KEY=your_pinecone_api_key
+  ```
 
-1. Clone the repository to your local machine.
+4. **Run the application:**
+  ```bash
+  streamlit run app.py
+  ```
 
-2. Install the required dependencies by running the following command:
-   ```
-   pip install -r requirements.txt
-   ```
-
-3. Obtain an API key from OpenAI and add it to the `.env` file in the project directory.
-```commandline
-OPENAI_API_KEY=your_secrit_api_key
-```
-
-## Usage
------
-To use the MultiPDF Chat App, follow these steps:
-
-1. Ensure that you have installed the required dependencies and added the OpenAI API key to the `.env` file.
-
-2. Run the `main.py` file using the Streamlit CLI. Execute the following command:
-   ```
-   streamlit run app.py
-   ```
-
-3. The application will launch in your default web browser, displaying the user interface.
-
-4. Load multiple PDF documents into the app by following the provided instructions.
-
-5. Ask questions in natural language about the loaded PDFs using the chat interface.
-
-## Contributing
-------------
-This repository is intended for educational purposes and does not accept further contributions. It serves as supporting material for a YouTube tutorial that demonstrates how to build this project. Feel free to utilize and enhance the app based on your own requirements.
-
-## License
--------
-The MultiPDF Chat App is released under the [MIT License](https://opensource.org/licenses/MIT).
